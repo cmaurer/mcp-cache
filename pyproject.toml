@@ -15,6 +15,16 @@ keywords = ["mcp", "cache", "sqlite", "time-series", "llm"]
 Homepage = "https://github.com/cmaurer/mcp-cache"
 Issues = "https://github.com/cmaurer/mcp-cache/issues"
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_cache"]
 
