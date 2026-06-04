@@ -1,6 +1,20 @@
 # CHANGELOG
 
 
+## v0.1.1 (2026-06-04)
+
+### Bug Fixes
+
+- Cache None values correctly in TTL cache
+  ([`885b19f`](https://github.com/cmaurer/mcp-cache/commit/885b19f7667755d5c103381dc69713d592a75164))
+
+get_or_fetch and get() both returned None for a missing key and for a legitimately cached None
+  value, causing a false cache miss on the second call. Introduced a _MISSING sentinel so the two
+  cases are distinguished.
+
+Co-Authored-By: Claude Sonnet 4.6 (1M context) <noreply@anthropic.com>
+
+
 ## v0.1.0 (2026-06-04)
 
 ### Chores
