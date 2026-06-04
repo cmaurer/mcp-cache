@@ -124,6 +124,14 @@ async def test_ttl_cache_stores_various_json_types(tmp_path):
         assert result == value
 
 
+async def test_cached_none_is_not_treated_as_miss(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    fetch = AsyncMock(return_value=None)
+    await cache.get_or_fetch("k", fetch)
+    await cache.get_or_fetch("k", fetch)
+    fetch.assert_awaited_once()  # second call must hit cache, not re-fetch
+
+
 async def test_get_returns_none_on_miss(tmp_path):
     cache = MCPCache(tmp_path / "test.db")
     assert await cache.get("missing") is None

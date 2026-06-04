@@ -9,6 +9,9 @@ from pathlib import Path
 from typing import Any, Awaitable, Callable
 
 
+_MISSING = object()  # sentinel distinguishing a cached None from a cache miss
+
+
 def _to_date_str(d: date | str) -> str:
     if isinstance(d, str):
         return d
@@ -78,22 +81,22 @@ class MCPCache:
         """Return cached value if fresh; otherwise call fetch_fn, cache, and return."""
         effective_ttl = ttl if ttl is not None else self._default_ttl
         cached = await asyncio.to_thread(self._ttl_get, key)
-        if cached is not None:
+        if cached is not _MISSING:
             return cached
         value = await fetch_fn()
         await asyncio.to_thread(self._ttl_set, key, value, effective_ttl)
         return value
 
-    def _ttl_get(self, key: str) -> Any | None:
+    def _ttl_get(self, key: str) -> Any:
         with sqlite3.connect(self._db_path) as conn:
             row = conn.execute(
                 "SELECT value_json, cached_at, ttl FROM ttl_cache WHERE key = ?", (key,)
             ).fetchone()
         if row is None:
-            return None
+            return _MISSING
         value_json, cached_at, ttl = row
         if time.time() - cached_at > ttl:
-            return None
+            return _MISSING
         return json.loads(value_json)
 
     def _ttl_set(self, key: str, value: Any, ttl: int) -> None:
@@ -112,7 +115,8 @@ class MCPCache:
 
     async def get(self, key: str) -> Any | None:
         """Return the cached value for key, or None if missing or expired."""
-        return await asyncio.to_thread(self._ttl_get, key)
+        result = await asyncio.to_thread(self._ttl_get, key)
+        return None if result is _MISSING else result
 
     async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
         """Store value under key. Uses default_ttl if ttl is not specified."""
