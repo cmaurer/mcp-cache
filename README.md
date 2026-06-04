@@ -150,6 +150,41 @@ async def get_price_history(symbol: str, start: str, end: str) -> list[dict]:
     )
 ```
 
+## Using with Claude Desktop
+
+Install the package:
+
+```bash
+pip install mcp-cache
+```
+
+Add the server to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cache": {
+      "command": "mcp-cache"
+    }
+  }
+}
+```
+
+Restart Claude Desktop. The following tools will be available:
+
+| Tool | Description |
+|------|-------------|
+| `cache_get(key)` | Return a cached value, or `null` if missing/expired |
+| `cache_set(key, value, ttl)` | Store a JSON value for `ttl` seconds (default 300) |
+| `cache_invalidate(key)` | Remove a specific entry |
+| `cache_clear_expired()` | Delete all expired entries |
+| `timeseries_store(series_id, observations, range_start, range_end)` | Store date-keyed observations |
+| `timeseries_get(series_id, start_date, end_date)` | Query cached observations |
+| `timeseries_invalidate(series_id)` | Clear all data for a series |
+| `cache_stats()` | Return entry counts and db path |
+
+The cache database is stored at `~/.cache/mcp_cache.db`.
+
 ## Development
 
 ```bash

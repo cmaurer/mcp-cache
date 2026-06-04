@@ -10,10 +10,16 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 keywords = ["mcp", "cache", "sqlite", "time-series", "llm"]
+dependencies = [
+    "mcp>=1.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/cmaurer/mcp-cache"
 Issues = "https://github.com/cmaurer/mcp-cache/issues"
+
+[project.scripts]
+mcp-cache = "mcp_cache.server:main"
 
 [project.optional-dependencies]
 dev = [

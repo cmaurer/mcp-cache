@@ -124,6 +124,33 @@ async def test_ttl_cache_stores_various_json_types(tmp_path):
         assert result == value
 
 
+async def test_get_returns_none_on_miss(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    assert await cache.get("missing") is None
+
+
+async def test_set_then_get_roundtrip(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    await cache.set("k", {"x": 1})
+    assert await cache.get("k") == {"x": 1}
+
+
+async def test_set_uses_default_ttl(tmp_path):
+    cache = MCPCache(tmp_path / "test.db", default_ttl=3600)
+    await cache.set("k", "v")
+    with sqlite3.connect(cache._db_path) as conn:
+        ttl = conn.execute("SELECT ttl FROM ttl_cache WHERE key = 'k'").fetchone()[0]
+    assert ttl == 3600
+
+
+async def test_set_explicit_ttl_overrides_default(tmp_path):
+    cache = MCPCache(tmp_path / "test.db", default_ttl=3600)
+    await cache.set("k", "v", ttl=60)
+    with sqlite3.connect(cache._db_path) as conn:
+        ttl = conn.execute("SELECT ttl FROM ttl_cache WHERE key = 'k'").fetchone()[0]
+    assert ttl == 60
+
+
 async def test_upsert_updates_on_re_store(tmp_path):
     cache = MCPCache(tmp_path / "test.db")
     await cache.get_or_fetch("k", AsyncMock(return_value="v1"))

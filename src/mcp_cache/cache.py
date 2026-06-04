@@ -110,6 +110,15 @@ class MCPCache:
                 (key, json.dumps(value), time.time(), ttl),
             )
 
+    async def get(self, key: str) -> Any | None:
+        """Return the cached value for key, or None if missing or expired."""
+        return await asyncio.to_thread(self._ttl_get, key)
+
+    async def set(self, key: str, value: Any, ttl: int | None = None) -> None:
+        """Store value under key. Uses default_ttl if ttl is not specified."""
+        effective_ttl = ttl if ttl is not None else self._default_ttl
+        await asyncio.to_thread(self._ttl_set, key, value, effective_ttl)
+
     async def invalidate(self, key: str) -> None:
         """Remove a specific TTL cache entry."""
         await asyncio.to_thread(self._ttl_delete, key)
