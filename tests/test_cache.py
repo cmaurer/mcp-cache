@@ -281,6 +281,38 @@ async def test_timeseries_empty_fetch_result(tmp_path):
     fetch.assert_awaited_once()
 
 
+# ── constructor parameters ──────────────────────────────────────────────────
+
+
+async def test_default_ttl_used_when_no_ttl_specified(tmp_path):
+    cache = MCPCache(tmp_path / "test.db", default_ttl=999)
+    await cache.set("k", "v")
+    with sqlite3.connect(cache._db_path) as conn:
+        ttl = conn.execute("SELECT ttl FROM ttl_cache WHERE key = 'k'").fetchone()[0]
+    assert ttl == 999
+
+
+async def test_busy_timeout_stored_on_instance(tmp_path):
+    cache = MCPCache(tmp_path / "test.db", busy_timeout=12345)
+    assert cache._busy_timeout == 12345
+
+
+async def test_busy_timeout_raises_on_locked_db(tmp_path):
+    db = tmp_path / "test.db"
+    cache = MCPCache(db, busy_timeout=100)  # 100 ms — fails fast
+    # Hold an exclusive lock from a second connection
+    blocker = sqlite3.connect(str(db))
+    blocker.execute("BEGIN EXCLUSIVE")
+    with pytest.raises(sqlite3.OperationalError, match="database is locked"):
+        cache._ttl_get("any-key")
+    blocker.close()
+
+
+async def test_default_busy_timeout_is_5000ms(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    assert cache._busy_timeout == 5000
+
+
 # ── stats ───────────────────────────────────────────────────────────────────
 
 

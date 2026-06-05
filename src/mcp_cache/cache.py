@@ -35,15 +35,25 @@ class MCPCache:
         )
     """
 
-    def __init__(self, db_path: str | Path = "mcp_cache.db", default_ttl: int = 300):
+    def __init__(
+        self,
+        db_path: str | Path = "mcp_cache.db",
+        default_ttl: int = 300,
+        busy_timeout: int = 5000,
+    ):
         self._db_path = str(Path(db_path).expanduser().resolve())
         self._default_ttl = default_ttl
+        self._busy_timeout = busy_timeout
         self._lock = asyncio.Lock()
         self._init_db()
 
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self._db_path, timeout=self._busy_timeout / 1000)
+        return conn
+
     def _init_db(self) -> None:
         Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             conn.executescript("""
                 CREATE TABLE IF NOT EXISTS ttl_cache (
                     key        TEXT PRIMARY KEY,
@@ -88,7 +98,7 @@ class MCPCache:
         return value
 
     def _ttl_get(self, key: str) -> Any:
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             row = conn.execute(
                 "SELECT value_json, cached_at, ttl FROM ttl_cache WHERE key = ?", (key,)
             ).fetchone()
@@ -100,7 +110,7 @@ class MCPCache:
         return json.loads(value_json)
 
     def _ttl_set(self, key: str, value: Any, ttl: int) -> None:
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO ttl_cache (key, value_json, cached_at, ttl)
@@ -128,7 +138,7 @@ class MCPCache:
         await asyncio.to_thread(self._ttl_delete, key)
 
     def _ttl_delete(self, key: str) -> None:
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             conn.execute("DELETE FROM ttl_cache WHERE key = ?", (key,))
 
     async def clear_expired(self) -> int:
@@ -136,7 +146,7 @@ class MCPCache:
         return await asyncio.to_thread(self._ttl_clear_expired)
 
     def _ttl_clear_expired(self) -> int:
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             cur = conn.execute(
                 "DELETE FROM ttl_cache WHERE (? - cached_at) > ttl", (time.time(),)
             )
@@ -174,7 +184,7 @@ class MCPCache:
         return await asyncio.to_thread(self._ts_query, series_id, start, end, date_key, value_key)
 
     def _ts_find_gaps(self, series_id: str, start: str, end: str) -> list[tuple[str, str]]:
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT start_date, end_date FROM ts_ranges
@@ -205,7 +215,7 @@ class MCPCache:
         return gaps
 
     def _ts_store(self, series_id, observations, range_start, range_end, date_key, value_key):
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             conn.executemany(
                 """
                 INSERT INTO ts_observations (series_id, obs_date, value)
@@ -224,7 +234,7 @@ class MCPCache:
             )
 
     def _ts_query(self, series_id, start, end, date_key, value_key):
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT obs_date, value FROM ts_observations
@@ -240,7 +250,7 @@ class MCPCache:
         await asyncio.to_thread(self._ts_delete_series, series_id)
 
     def _ts_delete_series(self, series_id: str) -> None:
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             conn.execute("DELETE FROM ts_observations WHERE series_id = ?", (series_id,))
             conn.execute("DELETE FROM ts_ranges WHERE series_id = ?", (series_id,))
 
@@ -252,7 +262,7 @@ class MCPCache:
 
     def _stats(self) -> dict:
         now = time.time()
-        with sqlite3.connect(self._db_path) as conn:
+        with self._connect() as conn:
             ttl_total = conn.execute("SELECT COUNT(*) FROM ttl_cache").fetchone()[0]
             ttl_fresh = conn.execute(
                 "SELECT COUNT(*) FROM ttl_cache WHERE (? - cached_at) <= ttl", (now,)
