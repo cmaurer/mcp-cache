@@ -1,6 +1,33 @@
 # CHANGELOG
 
 
+## v0.2.0 (2026-06-05)
+
+### Features
+
+- Make MCP server configuration configurable via env vars
+  ([#1](https://github.com/cmaurer/mcp-cache/pull/1),
+  [`5e757b5`](https://github.com/cmaurer/mcp-cache/commit/5e757b51897a83662f94ae5980b80d21cd26f795))
+
+* feat: make SQLite db path configurable via MCP_CACHE_DB env var
+
+Defaults to ~/.cache/mcp_cache.db (existing behavior unchanged). Set MCP_CACHE_DB to any path,
+  including a Google Drive mount, in the Claude Desktop env config to relocate the database.
+
+Co-Authored-By: Claude Sonnet 4.6 (1M context) <noreply@anthropic.com>
+
+* feat: add MCP_CACHE_DEFAULT_TTL and MCP_CACHE_BUSY_TIMEOUT env vars
+
+Exposes default_ttl and busy_timeout as environment-configurable settings. Introduces
+  MCPCache._connect() to apply busy_timeout consistently across all SQLite connections.
+
+* test: add coverage for default_ttl and busy_timeout constructor params
+
+---------
+
+Co-authored-by: Claude Sonnet 4.6 (1M context) <noreply@anthropic.com>
+
+
 ## v0.1.1 (2026-06-04)
 
 ### Bug Fixes
