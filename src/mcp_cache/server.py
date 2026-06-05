@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP
@@ -11,9 +12,10 @@ from mcp.server.fastmcp import FastMCP
 from .cache import MCPCache
 
 _DEFAULT_DB = Path.home() / ".cache" / "mcp_cache.db"
+_db_path = Path(os.environ.get("MCP_CACHE_DB", _DEFAULT_DB)).expanduser()
 
 app = FastMCP("mcp-cache")
-_cache = MCPCache(_DEFAULT_DB)
+_cache = MCPCache(_db_path)
 
 
 @app.tool()
