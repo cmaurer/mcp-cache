@@ -1,6 +1,40 @@
 # CHANGELOG
 
 
+## v0.2.1 (2026-07-06)
+
+### Bug Fixes
+
+- Add cache key/series listing methods ([#2](https://github.com/cmaurer/mcp-cache/pull/2),
+  [`140bc30`](https://github.com/cmaurer/mcp-cache/commit/140bc30044f78f6ba36a9ac359234cd0fbb345d6))
+
+* docs: add design spec for cache key/series listing methods
+
+* docs: add implementation plan for cache key/series listing
+
+* feat: add MCPCache.list_keys() to list TTL cache keys
+
+Implement list_keys() method with optional prefix filtering and expired entry handling. Includes
+  _ttl_list_keys() helper and _like_prefix() escaping utility.
+
+* feat: add MCPCache.list_series() to list time series IDs
+
+Implement list_series() method with optional prefix filtering: - Public async method using
+  asyncio.to_thread pattern - Private sync helper _ts_list_series with SQL LIKE filtering - Reuses
+  _like_prefix helper from Task 1 - Results sorted alphabetically - Added 4 comprehensive tests
+  covering empty cache, deduplication, and prefix filtering
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+
+* feat: expose cache_list_keys and timeseries_list_series MCP tools
+
+* docs: add CLAUDE.md with architecture and command reference
+
+---------
+
+Co-authored-by: Claude Sonnet 5 <noreply@anthropic.com>
+
+
 ## v0.2.0 (2026-06-05)
 
 ### Features
