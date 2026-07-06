@@ -41,6 +41,3 @@ build_command = "pip install build && python -m build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcp_cache"]
-
-[tool.hatch.build]
-sources = ["src"]
