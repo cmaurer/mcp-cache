@@ -167,6 +167,60 @@ async def test_upsert_updates_on_re_store(tmp_path):
     assert result == "v2"
 
 
+async def test_list_keys_empty_cache(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    assert await cache.list_keys() == []
+
+
+async def test_list_keys_returns_fresh_keys_sorted(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    await cache.set("zebra", "v")
+    await cache.set("apple", "v")
+    assert await cache.list_keys() == ["apple", "zebra"]
+
+
+async def test_list_keys_excludes_expired_by_default(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    old = time.time() - 9999
+    with sqlite3.connect(cache._db_path) as conn:
+        conn.executemany(
+            "INSERT INTO ttl_cache (key, value_json, cached_at, ttl) VALUES (?, ?, ?, ?)",
+            [
+                ("stale", '"a"', old, 300),
+                ("fresh", '"b"', time.time(), 3600),
+            ],
+        )
+    assert await cache.list_keys() == ["fresh"]
+
+
+async def test_list_keys_include_expired_true(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    old = time.time() - 9999
+    with sqlite3.connect(cache._db_path) as conn:
+        conn.executemany(
+            "INSERT INTO ttl_cache (key, value_json, cached_at, ttl) VALUES (?, ?, ?, ?)",
+            [
+                ("stale", '"a"', old, 300),
+                ("fresh", '"b"', time.time(), 3600),
+            ],
+        )
+    assert await cache.list_keys(include_expired=True) == ["fresh", "stale"]
+
+
+async def test_list_keys_prefix_filter(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    await cache.set("fred:T10YIE", "v")
+    await cache.set("fred:DGS10", "v")
+    await cache.set("other:key", "v")
+    assert await cache.list_keys(prefix="fred:") == ["fred:DGS10", "fred:T10YIE"]
+
+
+async def test_list_keys_prefix_no_match(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    await cache.set("fred:T10YIE", "v")
+    assert await cache.list_keys(prefix="nomatch:") == []
+
+
 # ── time series ─────────────────────────────────────────────────────────────
 
 
