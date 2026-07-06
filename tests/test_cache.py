@@ -335,6 +335,38 @@ async def test_timeseries_empty_fetch_result(tmp_path):
     fetch.assert_awaited_once()
 
 
+async def test_list_series_empty_cache(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    assert await cache.list_series() == []
+
+
+async def test_list_series_returns_distinct_sorted(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    f1 = AsyncMock(return_value=_obs(["2024-01-01"]))
+    f2 = AsyncMock(return_value=_obs(["2024-01-01"]))
+    await cache.get_timeseries("zebra", "2024-01-01", "2024-01-01", f1)
+    await cache.get_timeseries("apple", "2024-01-01", "2024-01-01", f2)
+    assert await cache.list_series() == ["apple", "zebra"]
+
+
+async def test_list_series_dedups_across_ranges(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    f1 = AsyncMock(return_value=_obs(["2024-01-01"]))
+    f2 = AsyncMock(return_value=_obs(["2024-02-01"]))
+    await cache.get_timeseries("S1", "2024-01-01", "2024-01-01", f1)
+    await cache.get_timeseries("S1", "2024-02-01", "2024-02-01", f2)
+    assert await cache.list_series() == ["S1"]
+
+
+async def test_list_series_prefix_filter(tmp_path):
+    cache = MCPCache(tmp_path / "test.db")
+    f1 = AsyncMock(return_value=_obs(["2024-01-01"]))
+    f2 = AsyncMock(return_value=_obs(["2024-01-01"]))
+    await cache.get_timeseries("fred:T10YIE", "2024-01-01", "2024-01-01", f1)
+    await cache.get_timeseries("other:S1", "2024-01-01", "2024-01-01", f2)
+    assert await cache.list_series(prefix="fred:") == ["fred:T10YIE"]
+
+
 # ── constructor parameters ──────────────────────────────────────────────────
 
 

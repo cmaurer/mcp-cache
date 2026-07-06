@@ -278,6 +278,21 @@ class MCPCache:
             conn.execute("DELETE FROM ts_observations WHERE series_id = ?", (series_id,))
             conn.execute("DELETE FROM ts_ranges WHERE series_id = ?", (series_id,))
 
+    async def list_series(self, prefix: str | None = None) -> list[str]:
+        """Return distinct time series IDs, optionally filtered by prefix."""
+        return await asyncio.to_thread(self._ts_list_series, prefix)
+
+    def _ts_list_series(self, prefix: str | None) -> list[str]:
+        query = "SELECT DISTINCT series_id FROM ts_observations"
+        params: list[Any] = []
+        if prefix:
+            query += " WHERE series_id LIKE ? ESCAPE '\\'"
+            params.append(_like_prefix(prefix))
+        query += " ORDER BY series_id"
+        with self._connect() as conn:
+            rows = conn.execute(query, params).fetchall()
+        return [row[0] for row in rows]
+
     # --- Diagnostics ---
 
     async def stats(self) -> dict:
