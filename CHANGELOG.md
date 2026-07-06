@@ -1,6 +1,26 @@
 # CHANGELOG
 
 
+## v0.2.2 (2026-07-06)
+
+### Bug Fixes
+
+- Wheel builds were shipping empty packages ([#3](https://github.com/cmaurer/mcp-cache/pull/3),
+  [`c35f270`](https://github.com/cmaurer/mcp-cache/commit/c35f270f6e43a592ecfd04017af5ee6a1f58dbe9))
+
+python -m build builds the sdist first, then builds the wheel from that sdist. The top-level
+  [tool.hatch.build] sources = ["src"] rewrite strips the src/ prefix when creating the sdist, so by
+  the time the wheel target's packages = ["src/mcp_cache"] is evaluated against the sdist's layout,
+  that path no longer exists — producing a wheel with only dist-info and no package files. Every
+  published version (0.1.0 through 0.2.1) is affected.
+
+Removing the redundant top-level sources config fixes it — verified the resulting wheel contains
+  __init__.py/cache.py/server.py and that MCPCache actually imports and works when installed from
+  it.
+
+Co-authored-by: Claude Sonnet 5 <noreply@anthropic.com>
+
+
 ## v0.2.1 (2026-07-06)
 
 ### Bug Fixes
