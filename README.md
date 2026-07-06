@@ -98,6 +98,13 @@ Remove a specific entry from the TTL cache. No-op if the key does not exist.
 
 Delete all expired TTL entries. Returns the number of entries removed.
 
+#### `await cache.list_keys(prefix=None, include_expired=False)`
+
+Return TTL cache keys as a sorted list of strings.
+
+- `prefix` — only return keys starting with this string; `None` (default) returns all keys
+- `include_expired` — include expired entries; defaults to `False` (fresh keys only)
+
 ---
 
 ### Time series methods
@@ -116,6 +123,12 @@ Returns a list of `{date_key: str, value_key: float | None}` dicts sorted **newe
 #### `await cache.invalidate_series(series_id)`
 
 Remove all cached observations and range records for a series.
+
+#### `await cache.list_series(prefix=None)`
+
+Return distinct time series IDs as a sorted list of strings.
+
+- `prefix` — only return series IDs starting with this string; `None` (default) returns all series
 
 ---
 
@@ -178,9 +191,11 @@ Restart Claude Desktop. The following tools will be available:
 | `cache_set(key, value, ttl)` | Store a JSON value for `ttl` seconds (default 300) |
 | `cache_invalidate(key)` | Remove a specific entry |
 | `cache_clear_expired()` | Delete all expired entries |
+| `cache_list_keys(prefix, include_expired)` | List TTL cache keys, optionally filtered by prefix |
 | `timeseries_store(series_id, observations, range_start, range_end)` | Store date-keyed observations |
 | `timeseries_get(series_id, start_date, end_date)` | Query cached observations |
 | `timeseries_invalidate(series_id)` | Clear all data for a series |
+| `timeseries_list_series(prefix)` | List time series IDs, optionally filtered by prefix |
 | `cache_stats()` | Return entry counts and db path |
 
 The cache database is stored at `~/.cache/mcp_cache.db`.

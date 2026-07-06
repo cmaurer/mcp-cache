@@ -49,6 +49,13 @@ async def cache_clear_expired() -> str:
 
 
 @app.tool()
+async def cache_list_keys(prefix: str = "", include_expired: bool = False) -> str:
+    """List TTL cache keys, optionally filtered by prefix."""
+    keys = await _cache.list_keys(prefix or None, include_expired)
+    return json.dumps(keys)
+
+
+@app.tool()
 async def timeseries_store(
     series_id: str,
     observations: str,
@@ -93,6 +100,13 @@ async def timeseries_invalidate(series_id: str) -> str:
     """Remove all cached observations and range records for series_id."""
     await _cache.invalidate_series(series_id)
     return f"invalidated series '{series_id}'"
+
+
+@app.tool()
+async def timeseries_list_series(prefix: str = "") -> str:
+    """List time series IDs, optionally filtered by prefix."""
+    series = await _cache.list_series(prefix or None)
+    return json.dumps(series)
 
 
 @app.tool()
