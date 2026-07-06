@@ -152,6 +152,30 @@ class MCPCache:
             )
             return cur.rowcount
 
+    async def list_keys(self, prefix: str | None = None, include_expired: bool = False) -> list[str]:
+        """Return TTL cache keys, optionally filtered by prefix.
+
+        Excludes expired entries unless include_expired=True.
+        """
+        return await asyncio.to_thread(self._ttl_list_keys, prefix, include_expired)
+
+    def _ttl_list_keys(self, prefix: str | None, include_expired: bool) -> list[str]:
+        query = "SELECT key FROM ttl_cache"
+        conditions = []
+        params: list[Any] = []
+        if not include_expired:
+            conditions.append("(? - cached_at) <= ttl")
+            params.insert(0, time.time())
+        if prefix:
+            conditions.append("key LIKE ? ESCAPE '\\'")
+            params.append(_like_prefix(prefix))
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY key"
+        with self._connect() as conn:
+            rows = conn.execute(query, params).fetchall()
+        return [row[0] for row in rows]
+
     # --- Time series cache ---
 
     async def get_timeseries(
@@ -254,6 +278,21 @@ class MCPCache:
             conn.execute("DELETE FROM ts_observations WHERE series_id = ?", (series_id,))
             conn.execute("DELETE FROM ts_ranges WHERE series_id = ?", (series_id,))
 
+    async def list_series(self, prefix: str | None = None) -> list[str]:
+        """Return distinct time series IDs, optionally filtered by prefix."""
+        return await asyncio.to_thread(self._ts_list_series, prefix)
+
+    def _ts_list_series(self, prefix: str | None) -> list[str]:
+        query = "SELECT DISTINCT series_id FROM ts_observations"
+        params: list[Any] = []
+        if prefix:
+            query += " WHERE series_id LIKE ? ESCAPE '\\'"
+            params.append(_like_prefix(prefix))
+        query += " ORDER BY series_id"
+        with self._connect() as conn:
+            rows = conn.execute(query, params).fetchall()
+        return [row[0] for row in rows]
+
     # --- Diagnostics ---
 
     async def stats(self) -> dict:
@@ -285,3 +324,8 @@ def _prev_day(iso: str) -> str:
 
 def _next_day(iso: str) -> str:
     return (date.fromisoformat(iso) + timedelta(days=1)).isoformat()
+
+
+def _like_prefix(prefix: str) -> str:
+    escaped = prefix.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    return escaped + "%"
