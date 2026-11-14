@@ -7,7 +7,7 @@ import json
 import os
 from pathlib import Path
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from .cache import MCPCache
 
@@ -16,7 +16,7 @@ _db_path = Path(os.environ.get("MCP_CACHE_DB", _DEFAULT_DB)).expanduser()
 _default_ttl = int(os.environ.get("MCP_CACHE_DEFAULT_TTL", 300))
 _busy_timeout = int(os.environ.get("MCP_CACHE_BUSY_TIMEOUT", 5000))
 
-app = FastMCP("mcp-cache")
+app = MCPServer("mcp-cache")
 _cache = MCPCache(_db_path, default_ttl=_default_ttl, busy_timeout=_busy_timeout)
 
 
