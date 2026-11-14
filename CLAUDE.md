@@ -25,7 +25,7 @@ Tests use `pytest-asyncio` with `asyncio_mode = "auto"` (`pyproject.toml`), so a
 The library is two files under `src/mcp_cache/`:
 
 - **`cache.py`** — `MCPCache`, the core SQLite-backed cache. No MCP/network dependency; pure stdlib (`sqlite3`, `asyncio`, `json`).
-- **`server.py`** — a `FastMCP` server (`app = FastMCP("mcp-cache")`) that instantiates one module-level `MCPCache` and wraps each of its methods as an `@app.tool()`. This is what `pip install`'s `mcp-cache` console script runs.
+- **`server.py`** — an `MCPServer` server (`app = MCPServer("mcp-cache")`, mcp 2.x; renamed from `FastMCP`) that instantiates one module-level `MCPCache` and wraps each of its methods as an `@app.tool()`. This is what `pip install`'s `mcp-cache` console script runs.
 
 New cache capability should almost always be added to `cache.py` first, then optionally exposed as a tool in `server.py` — not the other way around.
 
