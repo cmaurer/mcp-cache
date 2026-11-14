@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.3.0 (2026-11-14)
+
+### Features
+
+- Upgrade to mcp 2.3.0 (FastMCP -> MCPServer) ([#4](https://github.com/cmaurer/mcp-cache/pull/4),
+  [`cb2be4a`](https://github.com/cmaurer/mcp-cache/commit/cb2be4a10fa4d2b25c75bcb2ac8fc92332e3f7b4))
+
+Require mcp>=2.3.0 and switch server.py to mcp.server.mcpserver.MCPServer, since mcp 2.x removed
+  mcp.server.fastmcp.
+
+Co-authored-by: Claude Sonnet 5.5 <noreply@anthropic.com>
+
+
 ## v0.2.2 (2026-07-06)
 
 ### Bug Fixes
